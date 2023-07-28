@@ -97,10 +97,10 @@ void insertStudent (student* stu) {
 }
 
 void addStudent () {
-    const char freshman[] = "freshman";
-    const char sophmore[] = "sophomore";
-    const char junior[] = "junior";
-    const char senior[] = "senior";
+    char freshman[] = "freshman";
+    char sophmore[] = "sophomore";
+    char junior[] = "junior";
+    char senior[] = "senior";
     
     char *freshmanPtr = freshman;
     char *sophmorePtr = sophmore;
