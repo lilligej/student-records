@@ -7,7 +7,7 @@
 # define NAME_BUFF_SIZE 20
 # define STUDENT_ID_BUFF_SIZE 10
 
-void chat();
+void driver();
 void addStudent();
 void modStudent();
 void displayAll();
@@ -15,14 +15,13 @@ void removeStudent();
 void displayStudent();
 void quit();
 
-
 typedef struct student {
     char name[NAME_BUFF_SIZE];
-    int year;
+    int year, studentID;
     double gpa;
-    int studentID;
-}student;
+} student;
 
+// Dynamically allocates memory for student struct and returns a student struct pointer
 student* createStudent (char* name, int year, double gpa, int studentID) {
     student* stu = (student*)malloc(sizeof(student));
     int index = 0;
@@ -40,9 +39,10 @@ student* createStudent (char* name, int year, double gpa, int studentID) {
 
 
 int main () {
-    chat();
+    driver();
 }
 
+// Clears Input Buffer by finding next "\n" character
 static void clearInput () {
     char arb;
     do {
@@ -50,11 +50,11 @@ static void clearInput () {
     } while (arb != '\n' && arb != EOF && arb != 0);
 }
 
-void chat () {
+// main driver of the main menu for the program.
+void driver () {
     int inputNum = 0;
     while (1) {
         printf("Welcome to Grade Management System!\n1. Add Student\n2. Modify Student\n3. Display All Grades\n4. Display Student Grades\n5. Remove Student\n6. Exit\n");
-        
         scanf("%d", &inputNum);
         
         switch (inputNum) {
@@ -63,17 +63,21 @@ void chat () {
             break;
         
         case 2:
+            // TODO
             //modStudent();
             break;
 
         case 3:
+            // TODO
             //displayAll();
             break;
 
         case 4:
+            // TODO
             //displayStudent();
 
         case 5:
+            // TODO
             //removeStudent();
             break;
 
@@ -88,20 +92,21 @@ void chat () {
     }
 }
 
+// Inserts student data into database
 void insertStudent (student* stu) {
-    
     FILE *db = fopen("records.csv", "a");
     if (db == NULL) printf("Error Opening File");
     fprintf(db,"\n%s,%d,%f,%d", stu->name, stu->year, stu->gpa, stu->studentID);
     fclose(db);
 }
 
+// TODO shorten to be less than 60 lines, ideally 35
+// Prompts user and receives data for required student information and stores data as student struct
 void addStudent () {
     char freshman[] = "freshman";
     char sophmore[] = "sophomore";
     char junior[] = "junior";
     char senior[] = "senior";
-    
     char *freshmanPtr = freshman;
     char *sophmorePtr = sophmore;
     char *juniorPtr = junior;
@@ -109,11 +114,11 @@ void addStudent () {
 
     char *namePtr = (char *)calloc(NAME_BUFF_SIZE, sizeof(char));
     char *yearPtr = (char *)calloc(YEAR_BUFF_SIZE, sizeof(char));
-    int year = -1;
+    int year, studentID = -1;
     char gpaStr[5];
     char idStr[8];
     double gpa = -1;
-    int studentID = -1;
+    //int studentID = -1;
 
     memset(gpaStr, '\0', sizeof(gpaStr));
     memset(idStr, '\0', sizeof(idStr));
@@ -157,7 +162,6 @@ void addStudent () {
         printf("Please Enter a Valid year (freshman, sophomore, junior, senior)\n");
         free(namePtr);
         free(yearPtr);
-        
         addStudent();
         return;
     }
@@ -166,16 +170,19 @@ void addStudent () {
     stu = createStudent(namePtr, year, gpa, studentID);
     printf("Inserting student: %s, %d, %f, %d\n", stu->name, stu->year, stu->gpa, stu->studentID);
     insertStudent(stu);
+
     free(namePtr);
     free(yearPtr);
     free(stu);
     return;
 }
 
+// Displays the data for the given student by name or ID
 void displayStudent () {
     // TODO
 }
 
+// Quits the program and exits
 void quit () {
     printf("Exiting...\n");
     exit(0);
