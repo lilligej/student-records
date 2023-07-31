@@ -6,6 +6,7 @@
 # define YEAR_BUFF_SIZE 16
 # define NAME_BUFF_SIZE 20
 # define STUDENT_ID_BUFF_SIZE 10
+# define GPA_BUFF_SIZE 5
 
 void driver();
 void addStudent();
@@ -15,6 +16,7 @@ void removeStudent();
 void displayStudent();
 void quit();
 
+// stores data about each student
 typedef struct student {
     char name[NAME_BUFF_SIZE];
     int year, studentID;
@@ -115,10 +117,9 @@ void addStudent () {
     char *namePtr = (char *)calloc(NAME_BUFF_SIZE, sizeof(char));
     char *yearPtr = (char *)calloc(YEAR_BUFF_SIZE, sizeof(char));
     int year, studentID = -1;
-    char gpaStr[5];
-    char idStr[8];
+    char gpaStr[GPA_BUFF_SIZE];
+    char idStr[STUDENT_ID_BUFF_SIZE];
     double gpa = -1;
-    //int studentID = -1;
 
     memset(gpaStr, '\0', sizeof(gpaStr));
     memset(idStr, '\0', sizeof(idStr));
@@ -134,8 +135,6 @@ void addStudent () {
     fflush(stdin);
     printf("Year: ");
     scanf("%16s", yearPtr);
-
-    //fflush(stdin);
     printf("GPA: ");
     clearInput();
     scanf("%5s", gpaStr);
