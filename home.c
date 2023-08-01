@@ -39,7 +39,6 @@ student* createStudent (char* name, int year, double gpa, int studentID) {
     return stu;
 }
 
-
 int main () {
     driver();
 }
@@ -102,30 +101,46 @@ void insertStudent (student* stu) {
     fclose(db);
 }
 
-// TODO shorten to be less than 60 lines, ideally 35
-// Prompts user and receives data for required student information and stores data as student struct
-void addStudent () {
+// Returns corresponding int for the string representation of grade level
+int gradeToInt (char *yearPtr) {
     char freshman[] = "freshman";
     char sophmore[] = "sophomore";
     char junior[] = "junior";
     char senior[] = "senior";
-    char *freshmanPtr = freshman;
-    char *sophmorePtr = sophmore;
-    char *juniorPtr = junior;
-    char *seniorPtr = senior;
+    int year = -1;
 
+    if (!strcmp(yearPtr, freshman)) {
+        year = 0;
+    }
+    else if (!strcmp(yearPtr, sophmore)) {
+        year = 1;
+    }
+    else if (!strcmp(yearPtr, junior)) {
+        year = 2;
+    }
+    else if (!strcmp(yearPtr, senior)) {
+        year = 3;
+    }
+    return year;
+}
+
+// TODO shorten to be ideally 35
+// Prompts user and receives data for required student information and stores data as student struct
+void addStudent () {
     char *namePtr = (char *)calloc(NAME_BUFF_SIZE, sizeof(char));
     char *yearPtr = (char *)calloc(YEAR_BUFF_SIZE, sizeof(char));
     int year, studentID = -1;
     char gpaStr[GPA_BUFF_SIZE];
     char idStr[STUDENT_ID_BUFF_SIZE];
     double gpa = -1;
+    char *strEnd;
 
     memset(gpaStr, '\0', sizeof(gpaStr));
     memset(idStr, '\0', sizeof(idStr));
     errno = 0;
     printf("Name: ");
     // TODO -- Error Handling when input exceeds length of buffer
+    // Scans in input for Name, Year, GPA, and Student ID
     clearInput();
     if (fgets(namePtr, NAME_BUFF_SIZE, stdin) == NULL) {
         fprintf(stderr, "Value of errno: %d\n", errno);
@@ -138,26 +153,15 @@ void addStudent () {
     printf("GPA: ");
     clearInput();
     scanf("%5s", gpaStr);
-
     printf("Student ID: ");
     scanf("%10s", idStr);
 
-    char *strEnd;
+    // converts gpaStr and idStr to float and int respectively
     gpa = strtof(gpaStr, &strEnd);
     studentID = strtol(idStr, &strEnd, STUDENT_ID_BUFF_SIZE);
-    if (!strcmp(yearPtr, freshmanPtr)) {
-        year = 0;
-    }
-    else if (!strcmp(yearPtr, sophmorePtr)) {
-        year = 1;
-    }
-    else if (!strcmp(yearPtr, juniorPtr)) {
-        year = 2;
-    }
-    else if (!strcmp(yearPtr, seniorPtr)) {
-        year = 3;
-    }
-    else {
+
+    year = gradeToInt(yearPtr);
+    if (year == -1) {
         printf("Please Enter a Valid year (freshman, sophomore, junior, senior)\n");
         free(namePtr);
         free(yearPtr);
@@ -165,6 +169,7 @@ void addStudent () {
         return;
     }
 
+    // Creates student struct and inserts struct data into database
     student* stu = (student*)malloc(sizeof(student));
     stu = createStudent(namePtr, year, gpa, studentID);
     printf("Inserting student: %s, %d, %f, %d\n", stu->name, stu->year, stu->gpa, stu->studentID);
