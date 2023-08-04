@@ -2,11 +2,12 @@
 # include <stdio.h>
 # include <stdlib.h>
 # include <errno.h>
+# include <ctype.h>
 
 # define YEAR_BUFF_SIZE 16
 # define NAME_BUFF_SIZE 20
 # define STUDENT_ID_BUFF_SIZE 10
-# define GPA_BUFF_SIZE 5
+# define GPA_BUFF_SIZE 10
 
 void driver();
 void addStudent();
@@ -19,12 +20,13 @@ void quit();
 // stores data about each student
 typedef struct student {
     char name[NAME_BUFF_SIZE];
-    int year, studentID;
+    int year;
+    long studentID;
     double gpa;
 } student;
 
 // Dynamically allocates memory for student struct and returns a student struct pointer
-student* createStudent (char* name, int year, double gpa, int studentID) {
+student* createStudent (char* name, int year, double gpa, long studentID) {
     student* stu = (student*)malloc(sizeof(student));
     int index = 0;
     while (*name != '\0') {
@@ -75,7 +77,7 @@ void driver () {
 
         case 4:
             // TODO
-            //displayStudent();
+            displayStudent();
 
         case 5:
             // TODO
@@ -97,7 +99,7 @@ void driver () {
 void insertStudent (student* stu) {
     FILE *db = fopen("records.csv", "a");
     if (db == NULL) printf("Error Opening File");
-    fprintf(db,"\n%s,%d,%f,%d", stu->name, stu->year, stu->gpa, stu->studentID);
+    fprintf(db,"\n%s,%d,%f,%ld", stu->name, stu->year, stu->gpa, stu->studentID);
     fclose(db);
 }
 
@@ -124,6 +126,11 @@ int gradeToInt (char *yearPtr) {
     return year;
 }
 
+char* intToGrade (int num) {
+    // TODO
+    return NULL;
+}
+
 // TODO shorten to be ideally 35
 // Prompts user and receives data for required student information and stores data as student struct
 void addStudent () {
@@ -138,9 +145,10 @@ void addStudent () {
     memset(gpaStr, '\0', sizeof(gpaStr));
     memset(idStr, '\0', sizeof(idStr));
     errno = 0;
-    printf("Name: ");
+
     // TODO -- Error Handling when input exceeds length of buffer
     // Scans in input for Name, Year, GPA, and Student ID
+    printf("Name: ");
     clearInput();
     if (fgets(namePtr, NAME_BUFF_SIZE, stdin) == NULL) {
         fprintf(stderr, "Value of errno: %d\n", errno);
@@ -172,7 +180,7 @@ void addStudent () {
     // Creates student struct and inserts struct data into database
     student* stu = (student*)malloc(sizeof(student));
     stu = createStudent(namePtr, year, gpa, studentID);
-    printf("Inserting student: %s, %d, %f, %d\n", stu->name, stu->year, stu->gpa, stu->studentID);
+    printf("Inserting student: %s, %d, %f, %ld\n", stu->name, stu->year, stu->gpa, stu->studentID);
     insertStudent(stu);
 
     free(namePtr);
@@ -181,12 +189,89 @@ void addStudent () {
     return;
 }
 
+student* getStudentByName (char *name) {
+    // TODO
+    printf("Search By Name Not Currently Supported\n");
+    exit(0);
+    return NULL;
+}
+
+// TODO
+student* getStudentByID (long ID) {
+    // TODO
+    const char delim[2] = ",";
+    char *token;
+    char *line = NULL;
+    size_t len = 0;
+    char *name = calloc(NAME_BUFF_SIZE, sizeof(char));
+    int grade;
+    double gpa;
+    long studentID;
+    int read = 0;
+    int foundFlag = 0;
+    student *stu = NULL;
+
+    //printf("Into Student ID: %ld", ID);
+    fflush(stdout);
+    FILE *db = fopen("records.csv", "r");
+    if (db == NULL) {
+        printf("Error Opening File");
+        exit(EXIT_FAILURE);
+    }
+
+    while (read = getline(&line, &len, db) != -1) {
+        //printf("Scanning Line: %s", line);
+        token = strtok(line, delim);
+        for (int i = 0; i < 4 && token != NULL; i++) {
+            if (i == 0) name = token;
+            if (i == 1) grade = atoi(token);
+            if (i == 2) gpa = atof(token);
+            if (i == 3) studentID = atol(token);
+            token = strtok(NULL, delim);
+        }
+        if (studentID == ID) {
+            foundFlag = 1;
+            break;
+        }
+    }
+    if (foundFlag != 1) {
+        printf("Error: Could not find student\n");
+        exit(1);
+        return stu;
+    }
+    stu = createStudent(name, grade, gpa, studentID);
+    return stu; // stu will need to freed in displayStudent()
+}
+
 // Displays the data for the given student by name or ID
 void displayStudent () {
     // TODO
+    char *input = calloc(NAME_BUFF_SIZE, sizeof(char));
+    char *gradeString;
+    student *stu;
+
+    printf("Name or ID: ");
+    clearInput();
+    if (fgets(input, NAME_BUFF_SIZE, stdin) == NULL) {
+        fprintf(stderr, "Value of errno: %d\n", errno);
+        perror("Error Inputing Name or ID");
+    }
+    
+    // TODO Bounds Checking on input
+    if (isdigit(*input)) {
+        stu = getStudentByID(atol(input));
+    }
+
+    else {
+        stu = getStudentByName(input);
+    }
+
+    gradeString = intToGrade(stu->year);
+    printf("Name: %s\nGrade: %d\nGPA: %f\nStudent ID: %ld\n", stu->name, stu->year, stu->gpa, stu->studentID);
+    return;
 }
 
-// Quits the program and exits
+// Quits the program
 void quit () {
     printf("Exiting...\n");
     exit(0);
