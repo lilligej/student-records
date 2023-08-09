@@ -3,11 +3,14 @@
 # include <stdlib.h>
 # include <errno.h>
 # include <ctype.h>
+# include "sqlite/sqlite3.h"
 
 # define YEAR_BUFF_SIZE 16
 # define NAME_BUFF_SIZE 20
 # define STUDENT_ID_BUFF_SIZE 10
 # define GPA_BUFF_SIZE 10
+
+//typedef struct sqlite sqlite;
 
 void driver();
 void addStudent();
@@ -18,6 +21,7 @@ void displayStudent();
 void quit();
 
 // stores data about each student
+// Student struct allows for an easier migration when implementing SQL database
 typedef struct student {
     char name[NAME_BUFF_SIZE];
     int year;
@@ -95,6 +99,7 @@ void driver () {
     }
 }
 
+/* depricated
 // Inserts student data into database
 void insertStudent (student* stu) {
     FILE *db = fopen("records.csv", "a");
@@ -102,6 +107,66 @@ void insertStudent (student* stu) {
     fprintf(db,"\n%s,%d,%f,%ld", stu->name, stu->year, stu->gpa, stu->studentID);
     fclose(db);
 }
+*/
+
+// Callback from web
+static int callback(void *data, int argc, char **argv, char **azColName){
+    int i;
+    fprintf(stderr, "%s: ", (const char*)data);
+    for(i=0; i<argc; i++){
+      printf("%s = %s, ", azColName[i], argv[i] ? argv[i] : "NULL");
+    }
+    printf("\n");
+    return 0;
+}
+
+void insertStudent(student *stu) {
+    sqlite3 *db;
+    sqlite3_stmt *q;
+    int rc = 0;
+    char *sqlErr = 0;
+    char *statement = "INSERT INTO records VALUES (?1,?2,?3,?4)";
+
+    // Opens database 'records'
+    rc = sqlite3_open("student_records.db", &db);
+    if (rc) {
+        printf("ERROR: Unable to Open DataBase");
+        exit(1);
+    }
+
+    // Prepare SQL statement to insert student data into statement
+    rc = sqlite3_prepare_v2(db, statement, -1, &q, NULL);
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "Failed to fetch data: %s\n", sqlite3_errmsg(db));
+        sqlite3_close(db);
+        return;
+    }
+
+    // Binds student data to SQL statement
+    rc = sqlite3_bind_text(q, 1, stu->name, 20, SQLITE_STATIC);
+    if(SQLITE_OK != rc) {
+		fprintf(stderr, "Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+		sqlite3_close(db);
+		exit(1);
+	}
+    sqlite3_bind_int(q, 2, stu->year);
+    sqlite3_bind_double(q, 3, stu->gpa);
+    sqlite3_bind_int(q, 4, stu->studentID);
+
+    // Exectes SQL statement
+    rc = sqlite3_step(q);
+    if (rc != SQLITE_OK && rc != SQLITE_DONE) {
+        fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
+        printf("SQL ERRROR NUMBER: %d", rc);
+        sqlite3_free(sqlErr);
+    }
+
+    sqlite3_finalize(q);
+    sqlite3_close(db);
+    return;
+}
+
+
 
 // Returns corresponding int for the string representation of grade level
 int gradeToInt (char *yearPtr) {
@@ -245,7 +310,6 @@ student* getStudentByID (long ID) {
 
 // Displays the data for the given student by name or ID
 void displayStudent () {
-    // TODO
     char *input = calloc(NAME_BUFF_SIZE, sizeof(char));
     char *gradeString;
     student *stu;
@@ -261,7 +325,6 @@ void displayStudent () {
     if (isdigit(*input)) {
         stu = getStudentByID(atol(input));
     }
-
     else {
         stu = getStudentByName(input);
     }
