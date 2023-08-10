@@ -10,8 +10,6 @@
 # define STUDENT_ID_BUFF_SIZE 10
 # define GPA_BUFF_SIZE 10
 
-//typedef struct sqlite sqlite;
-
 void driver();
 void addStudent();
 void modStudent();
@@ -21,17 +19,17 @@ void displayStudent();
 void quit();
 
 // stores data about each student
-// Student struct allows for an easier migration when implementing SQL database
-typedef struct student {
+struct Student {
     char name[NAME_BUFF_SIZE];
     int year;
     long studentID;
     double gpa;
-} student;
+};
+typedef struct Student Student;
 
 // Dynamically allocates memory for student struct and returns a student struct pointer
-student* createStudent (char* name, int year, double gpa, long studentID) {
-    student* stu = (student*)malloc(sizeof(student));
+Student* createStudent (char* name, int year, double gpa, long studentID) {
+    Student* stu = (Student*)malloc(sizeof(Student));
     int index = 0;
     while (*name != '\0') {
         stu->name[index] = *name;
@@ -99,16 +97,6 @@ void driver () {
     }
 }
 
-/* depricated
-// Inserts student data into database
-void insertStudent (student* stu) {
-    FILE *db = fopen("records.csv", "a");
-    if (db == NULL) printf("Error Opening File");
-    fprintf(db,"\n%s,%d,%f,%ld", stu->name, stu->year, stu->gpa, stu->studentID);
-    fclose(db);
-}
-*/
-
 // Callback from web
 static int callback(void *data, int argc, char **argv, char **azColName){
     int i;
@@ -120,7 +108,8 @@ static int callback(void *data, int argc, char **argv, char **azColName){
     return 0;
 }
 
-void insertStudent(student *stu) {
+// Inserts student data into database
+void insertStudent(Student *stu) {
     sqlite3 *db;
     sqlite3_stmt *q;
     int rc = 0;
@@ -165,8 +154,6 @@ void insertStudent(student *stu) {
     sqlite3_close(db);
     return;
 }
-
-
 
 // Returns corresponding int for the string representation of grade level
 int gradeToInt (char *yearPtr) {
@@ -241,10 +228,19 @@ void addStudent () {
         fprintf(stderr, "Value of errno: %d\n", errno);
         perror("Error Inputing Name");
     }
+    if (strlen(namePtr) > NAME_BUFF_SIZE - 2) {
+        printf("ERROR: Name length too long\n");
+        exit(1);
+    }
     namePtr[strcspn(namePtr, "\n")] = 0;
     fflush(stdin);
     printf("Year: ");
     scanf("%16s", yearPtr);
+    if (strlen(yearPtr) > YEAR_BUFF_SIZE - 2) {
+        printf("ERROR: Year length too long\n");
+        exit(1);
+    }
+
     printf("GPA: ");
     clearInput();
     scanf("%5s", gpaStr);
@@ -265,7 +261,7 @@ void addStudent () {
     }
 
     // Creates student struct and inserts struct data into database
-    student* stu = (student*)malloc(sizeof(student));
+    Student* stu = (Student*)malloc(sizeof(Student));
     stu = createStudent(namePtr, year, gpa, studentID);
     printf("Inserting student: %s, %d, %f, %ld\n", stu->name, stu->year, stu->gpa, stu->studentID);
     insertStudent(stu);
@@ -276,7 +272,8 @@ void addStudent () {
     return;
 }
 
-student* getStudentByName (char *name) {
+// TODO
+Student* getStudentByName (char *name) {
     // TODO
     printf("Search By Name Not Currently Supported\n");
     exit(0);
@@ -284,8 +281,7 @@ student* getStudentByName (char *name) {
 }
 
 // TODO
-student* getStudentByID (long ID) {
-    // TODO
+Student* getStudentByID (long ID) {
     const char delim[2] = ",";
     char *token;
     char *line = NULL;
@@ -296,7 +292,7 @@ student* getStudentByID (long ID) {
     long studentID;
     int read = 0;
     int foundFlag = 0;
-    student *stu = NULL;
+    Student *stu = NULL;
 
     //printf("Into Student ID: %ld", ID);
     fflush(stdout);
@@ -334,7 +330,7 @@ student* getStudentByID (long ID) {
 void displayStudent () {
     char *input = calloc(NAME_BUFF_SIZE, sizeof(char));
     char *gradeString;
-    student *stu;
+    Student *stu;
 
     printf("Name or ID: ");
     clearInput();
@@ -350,9 +346,9 @@ void displayStudent () {
     else {
         stu = getStudentByName(input);
     }
-
     gradeString = intToGrade(stu->year);
     printf("Name: %s\nGrade: %d\nGPA: %f\nStudent ID: %ld\n", stu->name, stu->year, stu->gpa, stu->studentID);
+    free(stu);
     return;
 }
 
