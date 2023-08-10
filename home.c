@@ -137,15 +137,15 @@ void insertStudent(student *stu) {
     // Prepare SQL statement to insert student data into statement
     rc = sqlite3_prepare_v2(db, statement, -1, &q, NULL);
     if (rc != SQLITE_OK) {
-        fprintf(stderr, "Failed to fetch data: %s\n", sqlite3_errmsg(db));
+        printf("ERROR: Failed to prepare SQL statement\n");
         sqlite3_close(db);
-        return;
+        exit(1);
     }
 
     // Binds student data to SQL statement
     rc = sqlite3_bind_text(q, 1, stu->name, 20, SQLITE_STATIC);
-    if(SQLITE_OK != rc) {
-		fprintf(stderr, "Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+    if(rc != SQLITE_OK) {
+		printf("ERROR: Failed to bind name\n");
 		sqlite3_close(db);
 		exit(1);
 	}
@@ -156,7 +156,7 @@ void insertStudent(student *stu) {
     // Exectes SQL statement
     rc = sqlite3_step(q);
     if (rc != SQLITE_OK && rc != SQLITE_DONE) {
-        fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
+        fprintf(stderr, "SQL ERROR: %s\n", sqlite3_errmsg(db));
         printf("SQL ERRROR NUMBER: %d", rc);
         sqlite3_free(sqlErr);
     }
@@ -171,7 +171,7 @@ void insertStudent(student *stu) {
 // Returns corresponding int for the string representation of grade level
 int gradeToInt (char *yearPtr) {
     char freshman[] = "freshman";
-    char sophmore[] = "sophomore";
+    char sophomore[] = "sophomore";
     char junior[] = "junior";
     char senior[] = "senior";
     int year = -1;
@@ -179,7 +179,7 @@ int gradeToInt (char *yearPtr) {
     if (!strcmp(yearPtr, freshman)) {
         year = 0;
     }
-    else if (!strcmp(yearPtr, sophmore)) {
+    else if (!strcmp(yearPtr, sophomore)) {
         year = 1;
     }
     else if (!strcmp(yearPtr, junior)) {
@@ -193,7 +193,29 @@ int gradeToInt (char *yearPtr) {
 
 char* intToGrade (int num) {
     // TODO
-    return NULL;
+    char freshman[] = "freshman\0";
+    char sophomore[] = "sophomore\0";
+    char junior[] = "junior\0";
+    char senior[] = "senior\0";
+    char *year = NULL;
+
+    switch (num) {
+        case 0:
+            year = freshman;
+            break;
+        case 1:
+            year = sophomore;
+            break;
+        case 2:
+            year = junior;
+            break;
+        case 3:
+            year = senior;
+            break;
+        default:
+            year = "UNDEFINED";
+    }
+    return year;
 }
 
 // TODO shorten to be ideally 35
