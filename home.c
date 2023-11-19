@@ -336,7 +336,7 @@ Student* getStudentByID (long ID) {
 */
 
 Student* getStudentByID (long id) {
-    // TODO - DOES not Work
+    // TODO - Shorten Function
     Student *stu = NULL;
     sqlite3 *db;
     sqlite3_stmt *q;
