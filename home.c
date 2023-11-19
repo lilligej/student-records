@@ -371,10 +371,11 @@ Student* getStudentByID (long id) {
     sqlite3_bind_int(q, 1, id);
     rc = sqlite3_step(q);
     
-    if (rc == SQLITE_ROW || rc == SQLITE_DONE) {
+    if (rc == SQLITE_ROW) {
         retName = sqlite3_column_text(q, 0);
         //printf("Name: %s\n", retName);
     }
+    else return stu;
 
     // Prepare Year Statement
     rc = sqlite3_prepare_v2(db, gradeSTMT, -1, &q, NULL);
@@ -386,7 +387,7 @@ Student* getStudentByID (long id) {
     sqlite3_bind_int(q, 1, id);
     rc = sqlite3_step(q);
 
-    if (rc == SQLITE_ROW || rc == SQLITE_DONE) {
+    if (rc == SQLITE_ROW) {
         retYear = sqlite3_column_int(q, 0);
         //printf("Year: %d\n", retYear);
     }
@@ -401,7 +402,7 @@ Student* getStudentByID (long id) {
     sqlite3_bind_int(q, 1, id);
     rc = sqlite3_step(q);
 
-    if (rc == SQLITE_ROW || rc == SQLITE_DONE) {
+    if (rc == SQLITE_ROW) {
         retGPA = sqlite3_column_double(q, 0);
         //printf("GPA: %d\n", retGPA);
     }
@@ -455,6 +456,10 @@ void displayStudent () {
     }
     else {
         stu = getStudentByName(input);
+    }
+    if (stu == NULL) {
+        printf("Student Not Found!\n");
+        return;
     }
     gradeString = intToGrade(stu->year);
     printf("******\nName: %s\nGrade: %d\nGPA: %f\nStudent ID: %ld\n******\n", stu->name, stu->year, stu->gpa, stu->studentID);
