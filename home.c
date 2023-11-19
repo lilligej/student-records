@@ -108,7 +108,7 @@ static int callback(void *data, int argc, char **argv, char **azColName){
     return 0;
 }
 
-// Inserts student data into database
+// Inserts student data into database. SQL Scheme: name, gpa, 
 void insertStudent(Student *stu) {
     sqlite3 *db;
     sqlite3_stmt *q;
@@ -201,6 +201,7 @@ char* intToGrade (int num) {
             break;
         default:
             year = "UNDEFINED";
+            exit(0);
     }
     return year;
 }
@@ -275,11 +276,18 @@ void addStudent () {
 // TODO
 Student* getStudentByName (char *name) {
     // TODO
+    sqlite3 *db;
+    sqlite3_stmt *q;
+    int rc = 0;
+    char *sqlErr = 0;
+
+    char *statement = "SELECT grade FROM records WHERE name=?1";
+
     printf("Search By Name Not Currently Supported\n");
     exit(0);
     return NULL;
 }
-
+/*
 // TODO
 Student* getStudentByID (long ID) {
     const char delim[2] = ",";
@@ -325,6 +333,108 @@ Student* getStudentByID (long ID) {
     stu = createStudent(name, grade, gpa, studentID);
     return stu; // stu will need to freed in displayStudent()
 }
+*/
+
+Student* getStudentByID (long id) {
+    // TODO - DOES not Work
+    Student *stu = NULL;
+    sqlite3 *db;
+    sqlite3_stmt *q;
+    int rc = 0;
+    char *sqlErr = 0;
+    char *nameSTMT = "SELECT name FROM records where studentID IS ?1";
+    char *gradeSTMT = "SELECT grade FROM records where studentID IS ?1";
+    char *gpaSTMT = "SELECT gpa FROM records where studentID IS ?1";
+    char *studentIDSTMT = "SELECT studentID FROM records WHERE studentID is ?1";
+
+    const char* retName = (char*)calloc(NAME_BUFF_SIZE, sizeof(char));
+    int retYear = -1;
+    long retStudentID = -1;
+    double retGPA = -1;
+
+    char* tmpName = (char*)calloc(NAME_BUFF_SIZE, sizeof(char));
+
+    // Opens database 'records'
+    rc = sqlite3_open("student_records.db", &db);
+    if (rc) {
+        printf("ERROR: Unable to Open DataBase");
+        exit(1);
+    }
+
+    // Prepare SQL statement to insert student data into statement
+    rc = sqlite3_prepare_v2(db, nameSTMT, -1, &q, NULL);
+    if (rc != SQLITE_OK) {
+        printf("ERROR: Failed to prepare SQL statement\n");
+        sqlite3_close(db);
+        exit(1);
+    }
+    sqlite3_bind_int(q, 1, id);
+    rc = sqlite3_step(q);
+    
+    if (rc == SQLITE_ROW || rc == SQLITE_DONE) {
+        retName = sqlite3_column_text(q, 0);
+        //printf("Name: %s\n", retName);
+    }
+
+    // Prepare Year Statement
+    rc = sqlite3_prepare_v2(db, gradeSTMT, -1, &q, NULL);
+    if (rc != SQLITE_OK) {
+        printf("ERROR: Failed to prepare SQL statement\n");
+        sqlite3_close(db);
+        exit(1);
+    }
+    sqlite3_bind_int(q, 1, id);
+    rc = sqlite3_step(q);
+
+    if (rc == SQLITE_ROW || rc == SQLITE_DONE) {
+        retYear = sqlite3_column_int(q, 0);
+        //printf("Year: %d\n", retYear);
+    }
+
+    // Prepare GPA Statement
+    rc = sqlite3_prepare_v2(db, gpaSTMT, -1, &q, NULL);
+    if (rc != SQLITE_OK) {
+        printf("ERROR: Failed to prepare SQL statement\n");
+        sqlite3_close(db);
+        exit(1);
+    }
+    sqlite3_bind_int(q, 1, id);
+    rc = sqlite3_step(q);
+
+    if (rc == SQLITE_ROW || rc == SQLITE_DONE) {
+        retGPA = sqlite3_column_double(q, 0);
+        //printf("GPA: %d\n", retGPA);
+    }
+
+    //Prepare StudentID Statement
+    rc = sqlite3_prepare_v2(db, studentIDSTMT, -1, &q, NULL);
+    if (rc != SQLITE_OK) {
+        printf("ERROR: Failed to prepare SQL statement\n");
+        sqlite3_close(db);
+        exit(1);
+    }
+    sqlite3_bind_int(q, 1, id);
+    rc = sqlite3_step(q);
+
+    if (rc == SQLITE_ROW || rc == SQLITE_DONE) {
+        retStudentID = sqlite3_column_double(q, 0);
+        //printf("StudentID: %d\n", retStudentID);
+    }
+
+    strcpy_s(tmpName, NAME_BUFF_SIZE * sizeof(char), retName);
+    printf("%s\n", tmpName);
+
+    stu = createStudent(tmpName, retYear, retGPA, retStudentID);
+
+    // Clean-up
+    sqlite3_finalize(q);
+    sqlite3_close(db);
+    return stu;
+}
+
+void displayAll() {
+    
+}
 
 // Displays the data for the given student by name or ID
 void displayStudent () {
@@ -347,7 +457,7 @@ void displayStudent () {
         stu = getStudentByName(input);
     }
     gradeString = intToGrade(stu->year);
-    printf("Name: %s\nGrade: %d\nGPA: %f\nStudent ID: %ld\n", stu->name, stu->year, stu->gpa, stu->studentID);
+    printf("******\nName: %s\nGrade: %d\nGPA: %f\nStudent ID: %ld\n******\n", stu->name, stu->year, stu->gpa, stu->studentID);
     free(stu);
     return;
 }
