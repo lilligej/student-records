@@ -287,53 +287,6 @@ Student* getStudentByName (char *name) {
     exit(0);
     return NULL;
 }
-/*
-// TODO
-Student* getStudentByID (long ID) {
-    const char delim[2] = ",";
-    char *token;
-    char *line = NULL;
-    size_t len = 0;
-    char *name = calloc(NAME_BUFF_SIZE, sizeof(char));
-    int grade;
-    double gpa;
-    long studentID;
-    int read = 0;
-    int foundFlag = 0;
-    Student *stu = NULL;
-
-    //printf("Into Student ID: %ld", ID);
-    fflush(stdout);
-    FILE *db = fopen("records.csv", "r");
-    if (db == NULL) {
-        printf("Error Opening File");
-        exit(EXIT_FAILURE);
-    }
-
-    while (read = getline(&line, &len, db) != -1) {
-        //printf("Scanning Line: %s", line);
-        token = strtok(line, delim);
-        for (int i = 0; i < 4 && token != NULL; i++) {
-            if (i == 0) name = token;
-            if (i == 1) grade = atoi(token);
-            if (i == 2) gpa = atof(token);
-            if (i == 3) studentID = atol(token);
-            token = strtok(NULL, delim);
-        }
-        if (studentID == ID) {
-            foundFlag = 1;
-            break;
-        }
-    }
-    if (foundFlag != 1) {
-        printf("Error: Could not find student\n");
-        exit(1);
-        return stu;
-    }
-    stu = createStudent(name, grade, gpa, studentID);
-    return stu; // stu will need to freed in displayStudent()
-}
-*/
 
 Student* getStudentByID (long id) {
     // TODO - Shorten Function
@@ -423,7 +376,6 @@ Student* getStudentByID (long id) {
     }
 
     strcpy_s(tmpName, NAME_BUFF_SIZE * sizeof(char), retName);
-    printf("%s\n", tmpName);
 
     stu = createStudent(tmpName, retYear, retGPA, retStudentID);
 
@@ -462,7 +414,7 @@ void displayStudent () {
         return;
     }
     gradeString = intToGrade(stu->year);
-    printf("******\nName: %s\nGrade: %d\nGPA: %f\nStudent ID: %ld\n******\n", stu->name, stu->year, stu->gpa, stu->studentID);
+    printf("******\nName: %s\nGrade: %s\nGPA: %f\nStudent ID: %ld\n******\n", stu->name, intToGrade(stu->year), stu->gpa, stu->studentID);
     free(stu);
     return;
 }
