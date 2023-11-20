@@ -18,7 +18,7 @@ void removeStudent();
 void displayStudent();
 void quit();
 
-// stores data about each student
+/* stores data about each student */
 struct Student {
     char name[NAME_BUFF_SIZE];
     int year;
@@ -27,7 +27,7 @@ struct Student {
 };
 typedef struct Student Student;
 
-// Dynamically allocates memory for student struct and returns a student struct pointer
+/* Dynamically allocates memory for student struct and returns a student struct pointer */
 Student* createStudent (char* name, int year, double gpa, long studentID) {
     Student* stu = (Student*)malloc(sizeof(Student));
     int index = 0;
@@ -47,7 +47,7 @@ int main () {
     driver();
 }
 
-// Clears Input Buffer by finding next "\n" character
+/* Clears Input Buffer by finding next "\n" character */
 static void clearInput () {
     char arb;
     do {
@@ -55,13 +55,20 @@ static void clearInput () {
     } while (arb != '\n' && arb != EOF && arb != 0);
 }
 
-// main driver of the main menu for the program.
+/* main driver of the main menu for the program. */
 void driver () {
     int inputNum = 0;
+    char numString[1];
+    memset(&numString, 0, 1 * sizeof(char));
+
     while (1) {
         printf("Welcome to Grade Management System!\n1. Add Student\n2. Modify Student\n3. Display All Grades\n4. Display Student Grades\n5. Remove Student\n6. Exit\n");
-        scanf("%d", &inputNum);
-        
+        scanf("%1s", &numString);
+        if (!isdigit(numString[0])) {
+            printf("Please Input Valid Number\n");
+            continue;
+        }
+        inputNum = atoi(numString);
         switch (inputNum) {
         case 1:
             addStudent();
@@ -97,9 +104,10 @@ void driver () {
     }
 }
 
-// Callback from web
+/* Callback from web */
 static int callback(void *data, int argc, char **argv, char **azColName){
     int i;
+
     fprintf(stderr, "%s: ", (const char*)data);
     for(i=0; i<argc; i++){
       printf("%s = %s, ", azColName[i], argv[i] ? argv[i] : "NULL");
@@ -108,8 +116,9 @@ static int callback(void *data, int argc, char **argv, char **azColName){
     return 0;
 }
 
-// Inserts student data into database. SQL Scheme: name, gpa, 
+/* Inserts student data into database. */
 void insertStudent(Student *stu) {
+    // SQL Schema: name, grade, gpa, studentID
     sqlite3 *db;
     sqlite3_stmt *q;
     int rc = 0;
@@ -155,7 +164,7 @@ void insertStudent(Student *stu) {
     return;
 }
 
-// Returns corresponding int for the string representation of grade level
+/* Returns corresponding int for the string representation of grade level. */
 int gradeToInt (char *yearPtr) {
     char freshman[] = "freshman";
     char sophomore[] = "sophomore";
@@ -178,6 +187,7 @@ int gradeToInt (char *yearPtr) {
     return year;
 }
 
+/* Converts integer (0-3) to coresponding string */
 char* intToGrade (int num) {
     // TODO
     char freshman[] = "freshman\0";
@@ -206,8 +216,8 @@ char* intToGrade (int num) {
     return year;
 }
 
-// TODO shorten to be ideally 35
-// Prompts user and receives data for required student information and stores data as student struct
+/* TODO: shorten to be ideally 35
+   Prompts user and receives data for required student information and stores data as student struct */
 void addStudent () {
     char *namePtr = (char *)calloc(NAME_BUFF_SIZE, sizeof(char));
     char *yearPtr = (char *)calloc(YEAR_BUFF_SIZE, sizeof(char));
@@ -273,7 +283,7 @@ void addStudent () {
     return;
 }
 
-// TODO
+/* TODO: Returns student struct with student information by querying database by given name */
 Student* getStudentByName (char *name) {
     // TODO
     sqlite3 *db;
@@ -288,6 +298,7 @@ Student* getStudentByName (char *name) {
     return NULL;
 }
 
+/* Returns student struct with student information by querying database by given studentID. */
 Student* getStudentByID (long id) {
     // TODO - Shorten Function
     Student *stu = NULL;
@@ -385,11 +396,12 @@ Student* getStudentByID (long id) {
     return stu;
 }
 
+/* TODO: Displays all students and their information */
 void displayAll() {
     
 }
 
-// Displays the data for the given student by name or ID
+/* Displays the data for the given student by name or ID */
 void displayStudent () {
     char *input = calloc(NAME_BUFF_SIZE, sizeof(char));
     char *gradeString;
@@ -419,7 +431,7 @@ void displayStudent () {
     return;
 }
 
-// Quits the program
+/* Quits the program. */
 void quit () {
     printf("Exiting...\n");
     exit(0);
