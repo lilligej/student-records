@@ -347,6 +347,7 @@ Student* getStudentByID (long id) {
     char *gpaSTMT = "SELECT gpa FROM records where studentID IS ?1";
     char *studentIDSTMT = "SELECT studentID FROM records WHERE studentID is ?1";
 
+    // change retName to a char array or figure out what to do with that
     char* retName = (char*)calloc(NAME_BUFF_SIZE, sizeof(char));
     int retYear = -1;
     long retStudentID = -1;
