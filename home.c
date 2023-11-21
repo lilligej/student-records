@@ -17,6 +17,7 @@ void displayAll();
 void removeStudent();
 void displayStudent();
 void quit();
+char * sql_getElement(sqlite3 *db, sqlite3_stmt *q, char * stmt, long id);
 
 /* stores data about each student */
 struct Student {
@@ -26,6 +27,11 @@ struct Student {
     double gpa;
 };
 typedef struct Student Student;
+
+/* Main Function */
+int main () {
+    driver();
+}
 
 /* Dynamically allocates memory for student struct and returns a student struct pointer */
 Student* createStudent (char* name, int year, double gpa, long studentID) {
@@ -41,10 +47,6 @@ Student* createStudent (char* name, int year, double gpa, long studentID) {
     stu->gpa = gpa;
     stu->studentID = studentID;
     return stu;
-}
-
-int main () {
-    driver();
 }
 
 /* Clears Input Buffer by finding next "\n" character */
@@ -189,7 +191,6 @@ int gradeToInt (char *yearPtr) {
 
 /* Converts integer (0-3) to coresponding string */
 char* intToGrade (int num) {
-    // TODO
     char freshman[] = "freshman\0";
     char sophomore[] = "sophomore\0";
     char junior[] = "junior\0";
@@ -298,6 +299,41 @@ Student* getStudentByName (char *name) {
     return NULL;
 }
 
+char * sql_getElement(sqlite3 *db, sqlite3_stmt *q, char * stmt, long id) {
+    int rc = 0;
+    const char* retTemp = (char*)calloc(NAME_BUFF_SIZE + 1, sizeof(char));
+    char* ret = (char*)calloc(NAME_BUFF_SIZE + 1, sizeof(char));
+    
+    // Opens database 'records'
+    rc = sqlite3_open("student_records.db", &db);
+    if (rc) {
+        printf("ERROR: Unable to Open DataBase");
+        exit(1);
+    }
+
+    // Prepare SQL statement to insert student data into statement
+    rc = sqlite3_prepare_v2(db, stmt, -1, &q, NULL);
+    if (rc != SQLITE_OK) {
+        printf("ERROR: Failed to prepare SQL statement\n");
+        sqlite3_close(db);
+        exit(1);
+    }
+    sqlite3_bind_int(q, 1, id);
+    rc = sqlite3_step(q);
+    
+    if (rc == SQLITE_ROW) {
+        retTemp = sqlite3_column_text(q, 0);
+    }
+    else {
+        return NULL;
+    }
+
+    strncpy_s(ret, NAME_BUFF_SIZE, retTemp, NAME_BUFF_SIZE * sizeof(char));
+    ret[NAME_BUFF_SIZE] = '\0';
+
+    return ret;
+}
+
 /* Returns student struct with student information by querying database by given studentID. */
 Student* getStudentByID (long id) {
     // TODO - Shorten Function
@@ -311,7 +347,7 @@ Student* getStudentByID (long id) {
     char *gpaSTMT = "SELECT gpa FROM records where studentID IS ?1";
     char *studentIDSTMT = "SELECT studentID FROM records WHERE studentID is ?1";
 
-    const char* retName = (char*)calloc(NAME_BUFF_SIZE, sizeof(char));
+    char* retName = (char*)calloc(NAME_BUFF_SIZE, sizeof(char));
     int retYear = -1;
     long retStudentID = -1;
     double retGPA = -1;
@@ -325,72 +361,17 @@ Student* getStudentByID (long id) {
         exit(1);
     }
 
-    // Prepare SQL statement to insert student data into statement
-    rc = sqlite3_prepare_v2(db, nameSTMT, -1, &q, NULL);
-    if (rc != SQLITE_OK) {
-        printf("ERROR: Failed to prepare SQL statement\n");
-        sqlite3_close(db);
-        exit(1);
-    }
-    sqlite3_bind_int(q, 1, id);
-    rc = sqlite3_step(q);
-    
-    if (rc == SQLITE_ROW) {
-        retName = sqlite3_column_text(q, 0);
-        //printf("Name: %s\n", retName);
-    }
-    else return stu;
+    retName = sql_getElement(db, q, nameSTMT, id);
+    retYear = atoi(sql_getElement(db, q, gradeSTMT, id));
+    retGPA = atof(sql_getElement(db, q, gpaSTMT, id));
+    retStudentID = atol(sql_getElement(db, q, studentIDSTMT, id));
 
-    // Prepare Year Statement
-    rc = sqlite3_prepare_v2(db, gradeSTMT, -1, &q, NULL);
-    if (rc != SQLITE_OK) {
-        printf("ERROR: Failed to prepare SQL statement\n");
-        sqlite3_close(db);
-        exit(1);
-    }
-    sqlite3_bind_int(q, 1, id);
-    rc = sqlite3_step(q);
+    // Checks if student was found
+    if (retName == NULL) return stu;
 
-    if (rc == SQLITE_ROW) {
-        retYear = sqlite3_column_int(q, 0);
-        //printf("Year: %d\n", retYear);
-    }
+    stu = createStudent(retName, retYear, retGPA, retStudentID);
 
-    // Prepare GPA Statement
-    rc = sqlite3_prepare_v2(db, gpaSTMT, -1, &q, NULL);
-    if (rc != SQLITE_OK) {
-        printf("ERROR: Failed to prepare SQL statement\n");
-        sqlite3_close(db);
-        exit(1);
-    }
-    sqlite3_bind_int(q, 1, id);
-    rc = sqlite3_step(q);
-
-    if (rc == SQLITE_ROW) {
-        retGPA = sqlite3_column_double(q, 0);
-        //printf("GPA: %d\n", retGPA);
-    }
-
-    //Prepare StudentID Statement
-    rc = sqlite3_prepare_v2(db, studentIDSTMT, -1, &q, NULL);
-    if (rc != SQLITE_OK) {
-        printf("ERROR: Failed to prepare SQL statement\n");
-        sqlite3_close(db);
-        exit(1);
-    }
-    sqlite3_bind_int(q, 1, id);
-    rc = sqlite3_step(q);
-
-    if (rc == SQLITE_ROW || rc == SQLITE_DONE) {
-        retStudentID = sqlite3_column_double(q, 0);
-        //printf("StudentID: %d\n", retStudentID);
-    }
-
-    strcpy_s(tmpName, NAME_BUFF_SIZE * sizeof(char), retName);
-
-    stu = createStudent(tmpName, retYear, retGPA, retStudentID);
-
-    // Clean-up
+    // Clean-up database
     sqlite3_finalize(q);
     sqlite3_close(db);
     return stu;
@@ -422,11 +403,11 @@ void displayStudent () {
         stu = getStudentByName(input);
     }
     if (stu == NULL) {
-        printf("Student Not Found!\n");
+        printf("================\nStudent Not Found!\n================\n");
         return;
     }
     gradeString = intToGrade(stu->year);
-    printf("******\nName: %s\nGrade: %s\nGPA: %f\nStudent ID: %ld\n******\n", stu->name, intToGrade(stu->year), stu->gpa, stu->studentID);
+    printf("================\nName: %s\nGrade: %s\nGPA: %f\nStudent ID: %ld\n================\n", stu->name, intToGrade(stu->year), stu->gpa, stu->studentID);
     free(stu);
     return;
 }
