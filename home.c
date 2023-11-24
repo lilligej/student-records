@@ -1,3 +1,12 @@
+/**********************************************************************
+ * This file contains the source code that runs the student-records system, 
+ * and contains all of the source code for the project. This project has
+ * dependencies on sqlite3, which must be installed in order to compile
+ * the file.
+ * 
+ * This project is currently a work in progress.
+ **********************************************************************/
+
 # include <string.h>
 # include <stdio.h>
 # include <stdlib.h>
@@ -17,7 +26,15 @@ void displayAll();
 void removeStudent();
 void displayStudent();
 void quit();
-char * sql_getElement(sqlite3 *db, sqlite3_stmt *q, char * stmt, long id);
+char* sql_getElement(sqlite3 *db, sqlite3_stmt *q, char * stmt, long id);
+
+/*
+ * ===================
+ *
+ * TODO: 
+ * 
+ * ===================
+ */
 
 /* stores data about each student */
 struct Student {
@@ -92,7 +109,7 @@ void driver () {
 
         case 5:
             // TODO
-            //removeStudent();
+            removeStudent();
             break;
 
         case 6:
@@ -291,7 +308,6 @@ Student* getStudentByName (char *name) {
     sqlite3_stmt *q;
     int rc = 0;
     char *sqlErr = 0;
-
     char *statement = "SELECT grade FROM records WHERE name=?1";
 
     printf("Search By Name Not Currently Supported\n");
@@ -299,11 +315,11 @@ Student* getStudentByName (char *name) {
     return NULL;
 }
 
-char * sql_getElement(sqlite3 *db, sqlite3_stmt *q, char * stmt, long id) {
+/* Returns a c-string of sql result from given query stmt and */
+char* sql_getElementByID(sqlite3 *db, sqlite3_stmt *q, char* stmt, long id) {
     int rc = 0;
-    const char* retTemp = (char*)calloc(NAME_BUFF_SIZE + 1, sizeof(char));
-    char* ret = (char*)calloc(NAME_BUFF_SIZE + 1, sizeof(char));
-    
+    char* ret = (char*)calloc(NAME_BUFF_SIZE, sizeof(char)); // must be freed
+
     // Opens database 'records'
     rc = sqlite3_open("student_records.db", &db);
     if (rc) {
@@ -322,15 +338,13 @@ char * sql_getElement(sqlite3 *db, sqlite3_stmt *q, char * stmt, long id) {
     rc = sqlite3_step(q);
     
     if (rc == SQLITE_ROW) {
-        retTemp = sqlite3_column_text(q, 0);
+        strncpy_s(ret, NAME_BUFF_SIZE - 1, sqlite3_column_text(q, 0), NAME_BUFF_SIZE * sizeof(char) - 1);
     }
     else {
         return NULL;
     }
 
-    strncpy_s(ret, NAME_BUFF_SIZE, retTemp, NAME_BUFF_SIZE * sizeof(char));
-    ret[NAME_BUFF_SIZE] = '\0';
-
+    ret[NAME_BUFF_SIZE-1] = '\0';
     return ret;
 }
 
@@ -351,9 +365,10 @@ Student* getStudentByID (long id) {
     int retYear = -1;
     long retStudentID = -1;
     double retGPA = -1;
-
-    char* tmpName = (char*)calloc(NAME_BUFF_SIZE, sizeof(char));
-
+    char* yrStr;
+    char* gpaStr;
+    char* idStr;
+   
     // Opens database 'records'
     rc = sqlite3_open("student_records.db", &db);
     if (rc) {
@@ -361,10 +376,16 @@ Student* getStudentByID (long id) {
         exit(1);
     }
 
-    retName = sql_getElement(db, q, nameSTMT, id);
-    retYear = atoi(sql_getElement(db, q, gradeSTMT, id));
-    retGPA = atof(sql_getElement(db, q, gpaSTMT, id));
-    retStudentID = atol(sql_getElement(db, q, studentIDSTMT, id));
+    retName = sql_getElementByID(db, q, nameSTMT, id);
+
+    yrStr = sql_getElementByID(db, q, gradeSTMT, id);
+    retYear = atoi(yrStr);
+    
+    gpaStr = sql_getElementByID(db, q, gpaSTMT, id);
+    retGPA = atof(gpaStr);
+
+    idStr = sql_getElementByID(db, q, studentIDSTMT, id);
+    retStudentID = atol(idStr);
 
     // Checks if student was found
     if (retName == NULL) return stu;
@@ -374,6 +395,12 @@ Student* getStudentByID (long id) {
     // Clean-up database
     sqlite3_finalize(q);
     sqlite3_close(db);
+
+    free(retName);
+    free(yrStr);
+    free(gpaStr);
+    free(idStr);
+
     return stu;
 }
 
@@ -412,7 +439,12 @@ void displayStudent () {
     return;
 }
 
-/* Quits the program. */
+/* Removes the given student from the database, either by name or studentID*/
+void removeStudent() {
+
+}
+
+/* Exits the program. */
 void quit () {
     printf("Exiting...\n");
     exit(0);
